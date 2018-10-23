@@ -21,7 +21,7 @@ ClusteringTool.run <- function()
     library(cluster)
     library(parallel)
     library(doSNOW)
-    library(Biobase)
+    library(ggcyto)
 
 
     appDir <- system.file("shinyApp", "app", package = "ClusteringTool")

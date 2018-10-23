@@ -5,7 +5,7 @@ Analysis tool used in a pipeline meant to establish the efficiency of clustering
 	
 ## Requirements
   * software: R(Version 3.4.3 to 3.5), Rstudio(optional)
-  * R packages: flowcore, microbenchmark, ncdfFlow, shiny, shinydashboard, shinyjs, doSNOW, cluster, parallel
+  * R packages: flowcore, microbenchmark, ncdfFlow, shiny, shinydashboard, shinyjs, doSNOW, cluster, parallel, ggcyto
   
 ## Quick installation guide
 
@@ -13,7 +13,7 @@ Analysis tool used in a pipeline meant to establish the efficiency of clustering
 ```
 install.packages(c("flowCore","microbenchmark,, "shiny", "shinyjs", "shinydashboard","cluster","parallel","doSNOW"))
 source("https://bioconductor.org/biocLite.R")
-biocLite("Biobase")
+biocLite("ggcyto")
 biocLite("flowCore")
 biocLite("FlowSOM")
 biocLite("ncdfFlow")
