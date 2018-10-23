@@ -1,0 +1,26 @@
+/*=============================================================
+==========================Load Tab============================
+=============================================================*/
+
+#t_2_fr
+{
+	margin-left: 0.2vw;
+	margin-top: 0.5vh;
+	background-color: white;
+	min-height: 40vh;
+	padding: 0.5vw;
+}
+
+h3
+{
+	margin-left: 0.2vw;
+}
+
+
+div#shiny-notification-panel {
+    width:500px;
+    height:200px;
+    font-size:30px;
+    top:50%;
+    right:50%;
+}
