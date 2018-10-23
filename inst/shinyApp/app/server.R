@@ -119,7 +119,9 @@ server <- function(input, output, session)
                                      selectInput(paste0("t_1_3_",f,"_mark_sel"),label = "Markers to use",
                                                  choices=markers.sel,
                                                  selected=markers.sel,
-                                                 multiple = T)
+                                                 multiple = T),
+                                     actionButton(paste0("t_1_3_",f,"_mark_all"), "Select all"),
+                                     actionButton(paste0("t_1_3_",f,"_unmark_all"), "Deselect all")
                                  ),
                                  box
                                  (
@@ -145,13 +147,64 @@ server <- function(input, output, session)
                                  box
                                  (
                                      width=1,height="12vh", style="padding-top:2vh",
-                                     checkboxInput(paste0("t_3_4_",f,"_cbox"), "Select", value = F)
+                                     checkboxInput(paste0("t_3_4_",f,"_cbox"), "Select", value = F),
+                                     actionButton(paste0("t_3_4_",f,"_mark_all"), "Select all"),
+                                     actionButton(paste0("t_3_4_",f,"_unmark_all"), "Deselect all")
                                  )
                              )
                     )
                     current.project$modified.fcs.files[[f]] <<- F
                     
                     
+                    #SELECT ALL BUTTON---------------------------------------------
+                    
+                    observeEvent(input[[paste0("t_1_3_",f,"_mark_all")]],
+                    {
+                        markers.sel <- list()
+                        lapply(1:ncol(current.project$fcs.files[[f]]@exprs), function(j)
+                        {
+                            markers.sel[[current.project$fcs.files.ui.colnames[[f]][[j]]]] <<- j
+                        })
+                        updateSelectInput(session, paste0("t_1_3_",f,"_mark_sel"),label = "Markers to use",
+                                          choices = markers.sel,
+                                          selected = markers.sel)
+                    })
+                    
+                    observeEvent(input[[paste0("t_1_3_",f,"_unmark_all")]],
+                    {
+                        markers.sel <- list()
+                        lapply(1:ncol(current.project$fcs.files[[f]]@exprs), function(j)
+                        {
+                            markers.sel[[current.project$fcs.files.ui.colnames[[f]][[j]]]] <<- j
+                        })
+                        updateSelectInput(session, paste0("t_1_3_",f,"_mark_sel"),label = "Markers to use",
+                                          choices = markers.sel,
+                                          selected = NULL)
+                    })
+                    
+                    observeEvent(input[[paste0("t_3_4_",f,"_mark_all")]],
+                    {
+                         markers.sel <- list()
+                         lapply(1:ncol(current.project$fcs.files[[f]]@exprs), function(j)
+                         {
+                             markers.sel[[current.project$fcs.files.ui.colnames[[f]][[j]]]] <<- j
+                         })
+                         updateSelectInput(session, paste0("t_3_4_",f,"_mark_sel"),label = "Markers to use",
+                                           choices = markers.sel,
+                                           selected = markers.sel)
+                    })
+                    
+                    observeEvent(input[[paste0("t_3_4_",f,"_unmark_all")]],
+                    {
+                         markers.sel <- list()
+                         lapply(1:ncol(current.project$fcs.files[[f]]@exprs), function(j)
+                         {
+                             markers.sel[[current.project$fcs.files.ui.colnames[[f]][[j]]]] <<- j
+                         })
+                         updateSelectInput(session, paste0("t_3_4_",f,"_mark_sel"),label = "Markers to use",
+                                           choices = markers.sel,
+                                           selected = NULL)
+                    })
                 }
             })
         }
@@ -458,7 +511,7 @@ server <- function(input, output, session)
                  tmp.fcs.files <- foreach(f.id=1:length(tmp.fcs.files), 
                                           .options.snow = list(progress=progress.fct), 
                                           .packages = c("flowCore"),
-                                          .export = c("selected.algo", "selected.algo.params", "is.defined")) %do%
+                                          .export = c("selected.algo", "selected.algo.params", "is.defined")) %dopar%
                  {
                       fcs <- tmp.fcs.files[[f.id]]
                       if(is.defined(fcs))
@@ -469,7 +522,6 @@ server <- function(input, output, session)
                               fcs <- selected.algo(fcs, fcs.col, selected.algo.params)
                           }
                       }
-                      
                       return(fcs)
                  }
                  print("EXEC TIME: ")
