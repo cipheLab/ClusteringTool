@@ -4,25 +4,6 @@ library(flowCore)
 m.no.transf.param = c("FSC-A","FSC-H","FSC-W","SSC-A","SSC-H","SSC-W","I515-A","Time")
 "%not.in%" = Negate("%in%")
 
-# m.transform.logicle <- function(fcs.file, channels, params) #obsolete
-# {
-#   fcs <- fcs.file
-#   fcs <- transform(fcs, transformList(channels,logicleTransform(m=4.5,w=0.5)))
-#   
-#   return(fcs)
-# }
-
-# m.inv.transform.logicle <- function(fcs.file, channels, params) #obsolete
-# {
-#     fcs <- fcs.file
-#     lgcl <- logicleTransform(m=4.5,w=0.5)
-#     invLgcl <- inverseLogicleTransform(trans=lgcl)
-#     
-#     fcs <- transform(fcs, transformList(channels, invLgcl))
-#     
-#     return(fcs)
-# }
-
 m.transform.asinh <- function(fcs.file, channels, cofactor)
 {
     fcs <- fcs.file
@@ -38,32 +19,6 @@ m.inv.transform.asinh <- function(fcs.file, channels, cofactor)
     
     return(fcs)
 }
-
-m.compensate <- function(fcs.file)
-{
-  fcs <- fcs.file
-  if(!is.null(fcs@description[["SPILL"]]))
-  {
-      fcs <- compensate(fcs, fcs@description[["SPILL"]])
-  }
-  
-  return(fcs)
-}
-
-
-# m.inv.compensate <- function(flow.frame)
-# {
-#     markers.transform <- colnames(flow.frame@description[["SPILL"]])
-#     
-#     if(!is.null(markers.transform))
-#     {
-#         mat <- apply(exprs(flow.frame)[,markers.transform], 1, FUN = function(x){lapply(names(x),function(y){sum(x*flow.frame@description[["SPILL"]][,y])})})
-#         mat <- matrix(unlist(mat), ncol=length(markers.transform), byrow=TRUE)
-#         exprs(flow.frame)[,markers.transform] <- mat
-#     }
-#     
-#     return(flow.frame)
-# }
 
 m.transform.logicle <- function(flow.frame, markers = NULL, value = NULL) #logiclTransformCIPHE
 {
@@ -158,16 +113,19 @@ m.inv.transform.logicle <- function(flow.frame, markers = NULL, value = NULL) #i
     return(flow.frame.inv)
 }
 
-m.inv.compensate <- function(x, spillover = NULL)  #deCompensateFlowFrame
+m.compensate <- function(fcs.file)
 {
-    if(is.null(spillover))
+    fcs <- fcs.file
+    if(!is.null(fcs@description[["SPILL"]]))
     {
-        if(!is.null(x@description[["SPILL"]]))
-        {
-            spillover <- x@description[["SPILL"]]
-        }
+        fcs <- compensate(fcs, fcs@description[["SPILL"]])
     }
     
+    return(fcs)
+}
+
+m.inv.compensate <- function(x, spillover)  #deCompensateFlowFrame
+{
     if(!is.null(spillover)){
         cols <- colnames(spillover)
         sel <- cols %in% colnames(x)
@@ -183,68 +141,3 @@ m.inv.compensate <- function(x, spillover = NULL)  #deCompensateFlowFrame
         return(x)
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-# m.get.fcs.files <- function(path){
-#   fcs.list <- list.files(path, full.names = TRUE)
-#   files <- lapply(fcs.list, function(x){read.FCS(x)})
-#   
-#   return(files)
-# }
-# 
-# m.pre.process.file <- function(fcs.file){
-#   channels <- colnames(fcs.file)[colnames(fcs.file)%not.in%m.no.transf.param]
-#   fcs <- m.transform.logicle(m.compensate(fcs.file), channels)
-#   fcs2 <- fcs
-#   for (k in channels){
-#     fcs2 <- fcs2[which(fcs2[,k]<4.5),]
-#     fcs2 <- fcs2[which(fcs2[,k]>0),]
-#   }
-#   fcs <- fcs2
-#   
-#   return(fcs2)
-# }
-# 
-# m.pre.process.file.asin <- function(fcs.file){
-#   channels <- colnames(fcs.file)[colnames(fcs.file)%not.in%m.no.transf.param]
-#   fcs <- transform(fcs.file, transformList(channels, arcsinhTransform(b=1/5)))
-#   fcs2 <- fcs
-#   for (k in channels){
-#     fcs2 <- fcs2[which(fcs2[,k]>0),]
-#   }
-#   fcs <- fcs2
-#   
-#   return(fcs2)
-# }
-# 
-# m.pre.process.save.file <- function(fcs.file, file.directory){
-#   fcs <- m.pre.process.file(fcs.file)
-#   write.FCS(fcs, filename=paste(file.directory, "/ppcd_", gsub("/","_",fcs@description$FILENAME), sep =""))
-#   
-#   return(fcs)
-# }
-# 
-# m.pre.process.asin.save.file <- function(fcs.file, file.directory){
-#   fcs <- m.pre.process.file.asin(fcs.file)
-#   write.FCS(fcs, filename=paste(file.directory, "/ppcd_", gsub("/","_",fcs@description$FILENAME), sep =""))
-#   return (fcs)
-# }
