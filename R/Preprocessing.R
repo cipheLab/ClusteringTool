@@ -1,6 +1,6 @@
 library(ncdfFlow)
 library(flowCore)
-library(openCyto)
+library(ggcyto)
 
 m.no.transf.param = c("FSC-A","FSC-H","FSC-W","SSC-A","SSC-H","SSC-W","I515-A","Time")
 "%not.in%" = Negate("%in%")
