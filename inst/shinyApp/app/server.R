@@ -3,8 +3,7 @@ library(shinydashboard)
 library(shinyjs)
 library(flowCore)
 library(doSNOW)
-library(doParallel)
-library(Biobase)
+library(parallel)
 
 
 server <- function(input, output, session)
