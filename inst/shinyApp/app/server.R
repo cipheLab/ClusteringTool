@@ -445,8 +445,8 @@ server <- function(input, output, session)
                  files.sizes <- unlist(sapply(tmp.fcs.files, function(curr.f){return(object.size(curr.f))}))
                  nmb.cl <- get.nmb.cores.max(files.sizes, available.cores = current.project$nmb.cores, x.cores = 0.1,
                                              x.ram = 0.3, correction.coef = 1.05, separate.by.files = T)
-                 cl <- makeCluster(nmb.cl)
-                 registerDoSNOW(cl)
+                 # cl <- makeCluster(nmb.cl)
+                 # registerDoSNOW(cl)
                  
                  progress.fct <- function(i)
                  {
@@ -459,9 +459,11 @@ server <- function(input, output, session)
                  tmp.fcs.files <- foreach(f.id=1:length(tmp.fcs.files), 
                                           .options.snow = list(progress=progress.fct), 
                                           .packages = c("flowCore"),
-                                          .export = c("selected.algo", "selected.algo.params", "is.defined")) %do%
+                                          .export = c("selected.algo", "selected.algo.params", "is.defined")) #%do%
                  {
+                      print("a")
                       fcs <- tmp.fcs.files[[f.id]]
+                      print("b")
                       if(is.defined(fcs))
                       {
                           if(tmp.input[[paste0("t_1_3_",f.id,"_cbox")]])
@@ -470,12 +472,13 @@ server <- function(input, output, session)
                               fcs <- selected.algo(fcs, fcs.col, selected.algo.params)
                           }
                       }
+                      print("c")
                       return(fcs)
                  }
                  print("EXEC TIME: ")
                  print(Sys.time()-in.time)
                  
-                 stopCluster(cl)
+                 #stopCluster(cl)
                  current.project$fcs.files <<- tmp.fcs.files
                  names(current.project$fcs.files) <<- tmp.fcs.files.names
                  
