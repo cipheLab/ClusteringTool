@@ -459,7 +459,7 @@ server <- function(input, output, session)
                  tmp.fcs.files <- foreach(f.id=1:length(tmp.fcs.files), 
                                           .options.snow = list(progress=progress.fct), 
                                           .packages = c("flowCore"),
-                                          .export = c("selected.algo", "selected.algo.params", "is.defined")) %dopar%
+                                          .export = c("selected.algo", "selected.algo.params", "is.defined")) %do%
                  {
                       fcs <- tmp.fcs.files[[f.id]]
                       if(is.defined(fcs))
