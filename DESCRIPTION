@@ -1,0 +1,10 @@
+Package: ClusteringTool
+Type: Package
+Title: Clustering Tool
+Version: 0.9.1
+Author: Isam Ben Soltane
+Maintainer: Isam Ben Soltane <isam.ben-soltane@inserm.fr>
+Description: Shiny app developped to use different clustering algorithms on FCS files. The files are enriched and can then be downloaded and used with the Analysis Tool.
+License: ?
+Encoding: UTF-8
+LazyData: true
