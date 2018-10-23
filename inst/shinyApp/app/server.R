@@ -3,7 +3,8 @@ library(shinydashboard)
 library(shinyjs)
 library(flowCore)
 library(doSNOW)
-
+library(doParallel)
+library(Biobase)
 
 
 server <- function(input, output, session)
@@ -28,7 +29,7 @@ server <- function(input, output, session)
     )
     
     env.var <- reactiveValues(
-        tool.wd = appDir <- system.file("shinyApp", "app", package = "ClusteringTool"),
+        tool.wd = getwd(),
         activate.analysis = F,
         clustering.done = F
     )
