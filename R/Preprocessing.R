@@ -58,7 +58,7 @@ m.transform.logicle <- function(flow.frame, markers = NULL, value = NULL) #logic
     w.values <- (4.5-log10(262143/abs(r.values)))/2
     w.values[which(w.values<0)] <- 0.5
     w.values[which(is.infinite(w.values))] <- 0.5
-    print("aaa")
+    
     for(t in 1:length(markers.transform)){
         lgcl <- logicleTransform(w=w.values[t])
         flow.frame <- ggcyto::transform(flow.frame, transformList(markers.transform[t],lgcl))
@@ -108,7 +108,7 @@ m.inv.transform.logicle <- function(flow.frame, markers = NULL, value = NULL) #i
     
     for(t in 1:length(markers.transform)){
         invLgcl <- inverseLogicleTransform(trans = logicleTransform(w=w.values[t]))
-        flow.frame.inv <- transform(flow.frame.inv, transformList(markers.transform[t],invLgcl))
+        flow.frame.inv <- ggcyto::transform(flow.frame.inv, transformList(markers.transform[t],invLgcl))
     }
     
     return(flow.frame.inv)

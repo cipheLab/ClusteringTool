@@ -460,9 +460,7 @@ server <- function(input, output, session)
                                           .packages = c("flowCore"),
                                           .export = c("selected.algo", "selected.algo.params", "is.defined")) %do%
                  {
-                      print("a")
                       fcs <- tmp.fcs.files[[f.id]]
-                      print("b")
                       if(is.defined(fcs))
                       {
                           if(tmp.input[[paste0("t_1_3_",f.id,"_cbox")]])
@@ -471,7 +469,7 @@ server <- function(input, output, session)
                               fcs <- selected.algo(fcs, fcs.col, selected.algo.params)
                           }
                       }
-                      print("c")
+                      
                       return(fcs)
                  }
                  print("EXEC TIME: ")
