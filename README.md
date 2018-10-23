@@ -1,7 +1,5 @@
-# Analysis Tool
-Analysis tool used in a pipeline meant to establish the efficiency of clustering algorithms. Developped as a shiny app.
- 
->[You may find additional information here :](doc/temp.pdf)
+# Clustering Tool
+Shiny app developped to use different clustering algorithms on FCS files. The files are enriched and can then be downloaded and used with the Analysis Tool.
 	
 ## Requirements
   * software: R(Version 3.4.3 to 3.5), Rstudio(optional)
@@ -11,7 +9,7 @@ Analysis tool used in a pipeline meant to establish the efficiency of clustering
 
   1. Run the following command in R/RStudio:
 ```
-install.packages(c("flowCore","microbenchmark,, "shiny", "shinyjs", "shinydashboard","cluster","parallel","doSNOW"))
+install.packages(c("microbenchmark,, "shiny", "shinyjs", "shinydashboard","cluster","parallel","doSNOW"))
 source("https://bioconductor.org/biocLite.R")
 biocLite("ggcyto")
 biocLite("flowCore")
