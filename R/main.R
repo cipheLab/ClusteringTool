@@ -17,9 +17,10 @@ ClusteringTool.run <- function()
     library(shiny)
     library(shinydashboard)
     library(shinyjs)
-    library(DT)
     library(FlowSOM)
     library(cluster)
+    library(parallel)
+    library(doSNOW)
 
 
     appDir <- system.file("shinyApp", "app", package = "ClusteringTool")
