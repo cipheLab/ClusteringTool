@@ -18,9 +18,7 @@ ClusteringTool.run <- function()
     library(shinydashboard)
     library(shinyjs)
     library(DT)
-    library(spade)
-    library(spadeCIPHE)
-    library(flowSOM)
+    library(FlowSOM)
     library(cluster)
 
 

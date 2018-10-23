@@ -1,5 +1,4 @@
 library(FlowSOM)
-library(Biobase)
 
 fct.parameters <- list("xgrid"=c(10,10,100,20),"ygrid"=c(10,10,100,20))
 
