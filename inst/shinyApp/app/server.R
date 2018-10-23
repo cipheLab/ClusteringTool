@@ -5,17 +5,6 @@ library(flowCore)
 library(doSNOW)
 
 
-source("../EfficiencyAnalysis.R")
-source("../FilePreHandling.R")
-source("../MethodsHandling.R")
-source("../ModifyFCS.R")
-source("../StatisticalAnalysis.R")
-source("../TimeAnalysis.R")
-source("../Runsfunctions.R")
-source("../PlotsFunctions.R")
-source("../Preprocessing.R")
-source("../RAMConsumption.R")
-
 
 server <- function(input, output, session)
 {
@@ -39,7 +28,7 @@ server <- function(input, output, session)
     )
     
     env.var <- reactiveValues(
-        tool.wd = getwd(),
+        tool.wd = appDir <- system.file("shinyApp", "app", package = "ClusteringTool"),
         activate.analysis = F,
         clustering.done = F
     )
