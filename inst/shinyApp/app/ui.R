@@ -73,22 +73,41 @@ ui <- dashboardPage(
                 (
                     id="t_2_fr",style="padding:2%;width:90%;border:solid gray;border-width:2px 0px 0px 1px",
                     box
-					(
-						height = "10vh", width=8, id="t_2_1", style="overflow:auto;max-height:20vh",
-						selectInput("t_2_1_sel", "Select Algortihms", choices = NULL, multiple = T)
-					),
-                    box
                     (
-                        height = "10vh", width=2, id="t_2_1", style="overflow:auto;max-height:20vh",
-                        actionButton("t_2_1_run", "Run Algorithms", width="90%", style="margin-top:3%;")
+                        height = "22vh", width=3, id="t_2_2", style="overflow:auto;max-height:20vh",
+                        checkboxInput("t_2_1_dwnsmpl", "Downsample all", value = T),
+                        div
+                        (
+                            div
+                            (
+                                sliderInput("t_2_1_dwnsmpl_rate", "Downsampling rate(%)", min = 0, max = 100, step = 1, value = 100),
+                                style="float:left;width:70%;"
+                            ),
+                            div
+                            (
+                                textInput("t_2_1_dwnsmpl_rate_step", "Step", value=1),
+                                style="float:left;width:14%;margin-top:2vh;margin-left:1.2vw"
+                            )
+                        )
+                        
+                        
                     ),
-                    ##NO USE FOR NOW=============================================================================================================
-					# box
-					# (
-					# 	height = "20vh", width=4, id="t_2_2",
-					# 	h4("Select Analysis Order")
-					# ),
-                    ##===========================================================================================================================
+                    box
+					(
+						height = "22vh", width=3, id="t_2_1", style="overflow:auto;max-height:20vh",
+						selectInput("t_2_1_sel", "Select Algortihms", choices = NULL, multiple = T),
+					    actionButton("t_2_1_run", "Run Algorithms", width="auto", style="margin-top:3%;margin-left:35%"),
+					    div(id="t_2_1_error")
+					),
+                    hidden(fluidRow
+                    (
+                        id="t_2_4", width=6,
+                        box
+                        (
+                            style="height:22vh;overflow:auto",
+                            tableOutput("t_2_4_fileInfo")
+                        )
+                    )),
                     fluidRow
                     (
                         id="t_2_3"

@@ -6,6 +6,7 @@ library(doSNOW)
 library(parallel)
 
 
+
 server <- function(input, output, session)
 {
     useShinyjs()
@@ -15,6 +16,7 @@ server <- function(input, output, session)
     
     current.project <- reactiveValues(
         fcs.files = NULL,
+        fcs.files.backup = NULL,
         fcs.files.ui.colnames = NULL,
         modified.fcs.files = NULL,
         nmb.cores = detectCores(),
@@ -114,7 +116,7 @@ server <- function(input, output, session)
                                  style="padding-left:1.7vw;padding-right:0.2vw",id=paste0("t_1_3_",f,"_fr"),
                                  box
                                  (
-                                     title=names(current.project$fcs.files)[f],collapsible=TRUE,width=10,collapsed=F,
+                                     title=names(current.project$fcs.files)[f],collapsible=TRUE,width=8,collapsed=F,
                                      id=paste0("t_1_3_",f), 
                                      selectInput(paste0("t_1_3_",f,"_mark_sel"),label = "Markers to use",
                                                  choices=markers.sel,
@@ -125,7 +127,8 @@ server <- function(input, output, session)
                                  ),
                                  box
                                  (
-                                     width=1,height="12vh", style="padding-top:2vh",
+                                     width=3,height="12vh",
+                                     textInput(paste0("t_1_3_",f,"_dwnsmpl"), "Downsample (nmb events)", value=nrow(fcs@exprs)),
                                      checkboxInput(paste0("t_1_3_",f,"_cbox"), "Select", value = F)
                                  )
                              )
@@ -323,22 +326,26 @@ server <- function(input, output, session)
                 if( is.null(current.project$fcs.files) )
                 {
                     current.project$fcs.files <<- list()
+                    current.project$fcs.files.backup <<- list()
                     current.project$modified.fcs.files <<- list()
                 }
+                current.project$fcs.files.backup[[paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files))]] <<- x
                 current.project$fcs.files[[paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files))]] <<- x
                 current.project$modified.fcs.files[[paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files))]] <<- T
                 progress.bar$inc(1/length(temp.files),detail=paste0("adding ",paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files))))
                 
-                file.vec <- matrix(ncol=3,nrow=1)
+                file.vec <- matrix(ncol=5,nrow=1)
                 file.vec[1,1] <- paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files)-1)
                 file.vec[1,2] <- trunc(file.size(f)/1024/1024*1000)/1000
                 file.vec[1,3] <- ncol(x)
+                file.vec[1,4] <- nrow(x)
+                file.vec[1,5] <- nrow(x)
                 
                 current.project$file.info.table <<- rbind(current.project$file.info.table,
                                                           file.vec)
                 current.project$file.info.table.visible.rows <<- c(current.project$file.info.table.visible.rows,
                                                                    T)
-                colnames(current.project$file.info.table) <<- c("Filename", "Size (Mo)", "Number of markers")
+                colnames(current.project$file.info.table) <<- c("Filename", "Size (Mo)", "Number of markers", "Number of events", "Subsample")
             })
             progress.bar$close()
         }
@@ -367,6 +374,7 @@ server <- function(input, output, session)
                 if(input[[paste0("t_1_3_",i,"_cbox")]])
                 {
                     current.project$fcs.files[[i]] <<- NA
+                    current.project$fcs.files.backup[[i]] <<- NA
                     current.project$modified.fcs.files[[i]] <<- F
                     current.project$fcs.files.ui.colnames[[i]] <<- NA
                     progress.bar$inc(1/nmb.files.to.remove, detail=paste0("File ", i, " removed"))
@@ -622,7 +630,7 @@ server <- function(input, output, session)
         if(l==1)
         {
             tmp.mat <- t(tmp.mat)
-            colnames(current.project$file.info.table) <<- c("Filename", "Size (Mo)", "Number of markers")
+            colnames(current.project$file.info.table) <<- c("Filename", "Size (Mo)", "Number of markers", "Number of events", "Subsample")
         }
         
         return(tmp.mat)
@@ -630,6 +638,7 @@ server <- function(input, output, session)
     }
     
     output$t_1_4_fileInfo <- renderTable(file.table.fct()) #FILES INFORMATION
+    output$t_2_4_fileInfo <- renderTable(file.table.fct()) #FILES INFORMATION
     output$t_3_4_fileInfo <- renderTable(file.table.fct()) #FILES INFORMATION
     
     observe(#SHOW/HIDE FILES INFORMATION
@@ -641,18 +650,51 @@ server <- function(input, output, session)
             {
                 
                 shinyjs::show("t_3_4")
+                shinyjs::show("t_2_4")
                 shinyjs::show("t_1_4")
             }
             else
             {
                 shinyjs::hide("t_3_4")
+                shinyjs::hide("t_2_4")
                 shinyjs::hide("t_1_4")
             }
         }
         else
         {
             shinyjs::hide("t_1_4")
+            shinyjs::hide("t_2_4")
             shinyjs::hide("t_3_4")
+        }
+    })
+    
+    observe(#UPDATE FILES SIZE (INFORMATION)
+    {
+        print("ok")
+        if(length(current.project$fcs.files)>0)
+        {
+            if(input$t_2_1_dwnsmpl)
+            {
+                for(i in 1:length(current.project$fcs.files))
+                {
+                    if(is.defined(current.project$fcs.files[[i]]))
+                    {
+                        dwnsmpl <- as.integer(as.numeric(input$t_2_1_dwnsmpl_rate)/100*nrow(current.project$fcs.files.backup[[i]]@exprs))
+                        current.project$file.info.table[i,5] <<- dwnsmpl
+                    }
+                }
+            }
+            else
+            {
+                for(i in 1:length(current.project$fcs.files))
+                {
+                    if(is.defined(current.project$fcs.files[[i]]))
+                    {
+                        dwnsmpl <- as.integer(min(as.numeric(input[[paste0("t_1_3_",i,"_dwnsmpl")]]), nrow(current.project$fcs.files.backup[[i]]@exprs)))
+                        current.project$file.info.table[i,5] <<- dwnsmpl
+                    }
+                }
+            }
         }
     })
     
@@ -751,7 +793,7 @@ server <- function(input, output, session)
                          box
                          (
                              title=paste0(input$t_2_1_sel[[k]], ": Parameters"), id=paste0("t_2_3_",k),style="padding:2vw",
-                             width=10, collapsible=T, collapsed=F
+                             width=11, collapsible=T, collapsed=F
                          )
                 )
 
@@ -764,8 +806,20 @@ server <- function(input, output, session)
 
                         insertUI(paste0("#t_2_3_",k),
                                  "beforeEnd",
-                                 sliderInput(paste0("t_2_3_",k,"_",p),par.name,min = as.numeric(par[1]),max=as.numeric(par[3]),
-                                             step=as.numeric(par[2]),value=c(as.numeric(par[4]),as.numeric(par[4])))
+                                 div
+                                 (
+                                     div
+                                     (
+                                         sliderInput(paste0("t_2_3_",k,"_",p),par.name,min = as.numeric(par[1]),max=as.numeric(par[3]),
+                                                     step=as.numeric(par[2]),value=c(as.numeric(par[4]),as.numeric(par[4]))),
+                                         style="float:left;width:80%;"
+                                     ),
+                                     div
+                                     (
+                                         textInput(paste0("t_2_3_",k,"_",p,"_step"), "Step", value=as.numeric(par[2])),
+                                         style="float:left;width:10%;margin-top:2vh;margin-left:1.2vw"
+                                     )
+                                 )
                         )
                     })
                 }
@@ -774,240 +828,318 @@ server <- function(input, output, session)
 
         }
     })
-
-    #NO USE FOR NOW========================================================================================================
-
-    # observe(#UPDATES ANALYSIS ORDER UI
-    # {
-    #     if( length(current.project$fcs.files)>0 && is.defined(input$t_2_1_sel) )
-    #     {
-    #         removeUI("#t_2_2_dropBox")
-    #         insertUI("#t_2_2",
-    #                  "beforeEnd",
-    #                  dropUI("t_2_2_dropBox", style = "height:100%", col_n = 3)
-    #         )
-    #         lapply(1:length(input$t_2_1_sel), function(alg.ID)
-    #         {
-    #             insertUI("#t_2_2_dropBox",
-    #                      "beforeEnd",
-    #                      dragUI(paste0("t_2_2_",alg.ID,"drag"),
-    #                             h4(input$t_2_1_sel[[alg.ID]]),
-    #                             style="width:90%")
-    #             )
-    #         })
-    #     }
-    # })
-
-    # observeEvent(input[["t_2_2_dropBox"]],#CHECK THE ELEMENTS IN THE ANALYSIS ORDER DROPBOX (temporary)
-    # {
-    #     y <- input[["t_2_2_dropBox"]]
-    #     print(y)
-    # })
-
-    #=====================================================================================================================
+    
+    observe(#UPDATE ALGORITHMS UI
+    {
+        if( length(current.project$fcs.files)>0 && is.defined(input$t_2_1_sel) )
+        {
+            lapply(1:length(input$t_2_1_sel), function(k)
+            {
+                
+                if( !is.null(clustering.algorithms$parameters[[input$t_2_1_sel[[k]]]]) )
+                {
+                    lapply(1:length(clustering.algorithms$parameters[[input$t_2_1_sel[[k]]]]), function(p)
+                    {
+                        if(is.defined(input[[paste0("t_2_3_",k,"_",p,"_step")]]) && input[[paste0("t_2_3_",k,"_",p,"_step")]] != "" &&
+                           input[[paste0("t_2_3_",k,"_",p,"_step")]] != " ")
+                        {
+                            par <- clustering.algorithms$parameters[[input$t_2_1_sel[[k]]]][[p]]
+                            par.name <- names(clustering.algorithms$parameters[[input$t_2_1_sel[[k]]]])[p]
+                            
+                            updateSliderInput(session, paste0("t_2_3_",k,"_",p),
+                                              step=as.numeric(input[[paste0("t_2_3_",k,"_",p,"_step")]]))
+                        }
+                    })
+                }
+                
+            })
+            
+        }
+    })
+    
+    observe(#UPDATE DOWNSAMPLING UI
+    {
+        if( is.defined(input$t_2_1_dwnsmpl_rate_step) && input$t_2_1_dwnsmpl_rate_step != "" && input$t_2_1_dwnsmpl_rate_step != " ")
+        {
+            updateSliderInput(session, "t_2_1_dwnsmpl_rate",
+                                              step=as.numeric(input$t_2_1_dwnsmpl_rate_step))
+        }
+    })
 
     observeEvent(input$t_2_1_run,#RUNS ANALYSES
     {
         if(length(current.project$fcs.files)>0)
         {
-            if(is.defined(input$t_2_1_sel) && length(input$t_2_1_sel)>0)
+            #DOWNSAMPLE FILES============================================================================================
+            if(input$t_2_1_dwnsmpl)
             {
-                lapply(1:length(input$t_2_1_sel), function(alg.id)
+                for(i in 1:length(current.project$fcs.files))
                 {
-                    curr.algo <- input$t_2_1_sel[[alg.id]]
-                    if(length(clustering.algorithms$parameters[[curr.algo]]) > 0)
+                    if(is.defined(current.project$fcs.files[[i]]))
                     {
-                        params <- list()
-                        params <- lapply(1:length(clustering.algorithms$parameters[[curr.algo]]), function(p)
+                        dwnsmpl <- as.integer(as.numeric(input$t_2_1_dwnsmpl_rate)/100*nrow(current.project$fcs.files.backup[[i]]@exprs))
+                        dwnsmpl <- sample(1:nrow(current.project$fcs.files.backup[[i]]@exprs), dwnsmpl, replace = F)
+                        if(nrow(current.project$fcs.files.backup[[i]]@exprs) == nrow(current.project$fcs.files[[i]]@exprs))
                         {
-                            x <- list(1,2,3)
-                            values <- c()
-                            if(is.defined(input[[paste0("t_2_3_",alg.id,"_",p)]]))
-                            {
-                                tmp <- input[[paste0("t_2_3_",alg.id,"_",p)]]
-                                x[[1]] <- as.numeric(tmp)[[1]]
-                                x[[2]] <- as.numeric(tmp)[[2]]
-                                x[[3]] <- as.numeric(clustering.algorithms$parameters[[curr.algo]][[p]][[2]])
-                            }
-                            if(is.defined(x[[3]]))
-                            {
-                                values <- seq(as.numeric(x[[1]]),as.numeric(x[[2]]),as.numeric(x[[3]]))
-                            }
-                            return(values)
-                        })
-                        names(params) <- names(clustering.algorithms$parameters[[curr.algo]])
-                    }
-                    runs.params.list <- run.algo.param.combi(params)
-
-                    #DEFINES PARALLEL WORK=========================================================================
-                    nmb.runs <- length(runs.params.list)
-                    runs.per.core <- nmb.runs/current.project$nmb.cores
-
-                    #Store reactive and global values
-                    tmp.curr.proj <- isolate(reactiveValuesToList(current.project))
-                    tmp.input <- isolate(reactiveValuesToList(input))
-                    tmp.tool.wd <- isolate(reactiveValuesToList(env.var))$tool.wd
-                    tmp.algo.params <- isolate(reactiveValuesToList(clustering.algorithms))$parameters
-                    
-                    tmp.L1 <- lapply(1:length(runs.params.list), function(tmp.id)
-                    {
-                        return(list(runs.params.list[[tmp.id]], tmp.id))
-                    })
-                    
-                    tmp.L2 <- lapply(1:length(tmp.curr.proj$fcs.files), function(tmp.id)
-                    {
-                        return(list(tmp.curr.proj$fcs.files[[tmp.id]], names(tmp.curr.proj$fcs.files)[tmp.id], tmp.id))
-                    })
-                    
-                    tmp.foreach.list <- run.algo.combi(list(tmp.L1, tmp.L2))
-                    L1.1 <- lapply(1:length(tmp.foreach.list), function(i)
-                    {
-                        return(tmp.foreach.list[[i]][[1]])
-                    })
-                    L1.2 <- lapply(1:length(tmp.foreach.list), function(i)
-                    {
-                        return(tmp.foreach.list[[i]][[2]])
-                    })
-                    L2.1 <- lapply(1:length(tmp.foreach.list), function(i)
-                    {
-                        return(tmp.foreach.list[[i]][[3]])
-                    })
-                    L2.2 <- lapply(1:length(tmp.foreach.list), function(i)
-                    {
-                        return(tmp.foreach.list[[i]][[4]])
-                    })
-                    L2.3 <- lapply(1:length(tmp.foreach.list), function(i)
-                    {
-                        return(tmp.foreach.list[[i]][[5]])
-                    })
-                    
-                    files.sizes <- unlist(sapply(tmp.curr.proj$fcs.files, function(curr.f){return(object.size(curr.f))}))
-                    nmb.cl <- get.nmb.cores.max(files.sizes, available.cores = current.project$nmb.cores, x.cores = 0.1,
-                                                x.ram = 0.3, correction.coef = 1.05, separate.by.files = F)
-                    cl <- makeCluster(nmb.cl)
-                    registerDoSNOW(cl)
-
-                    progress.bar <- Progress$new()
-                    progress.bar$set(paste0("ALGORITHM: ", curr.algo), value=0)
-                    progress.bar$inc(0,detail="fetching parameters")
-                    progress.bar.fct <- function(i)
-                    {
-                        par.val <- unlist(L1.1[[as.integer(i)]])
-                        par.name <- names(tmp.algo.params[[curr.algo]])
-                        progress.bar$inc(1/length(L1.1),
-                                         detail=paste0(par.name,": ",par.val))
-                    }
-                    in.time <- Sys.time()
-                    
-                    temp.out <- foreach(run.id=L1.2, run.parameters.values=L1.1, fcs=L2.1, fcs.name=L2.2, f.id=L2.3,
-                                        .options.snow = list(progress=progress.bar.fct),
-                                        .packages=c("flowCore","microbenchmark"),
-                                        .export = c("is.defined","benchmark.method","benchmark.source.method","add.keyword.to.fcs","alg.id",
-                                                    "curr.algo","enrich.FCS", "params","tmp.input","tmp.tool.wd","tmp.algo.params")) %dopar%
-                    {
-                        added.keyword <- NULL
-                        added.keyword.name <- NULL
-                        if(is.defined(fcs))
-                        {
-                            markers_col <- 1
-                            if( is.defined(tmp.input[[paste0("t_1_3_",f.id,"_mark_sel")]]) )
-                            {
-                                markers_col <- tmp.input[[paste0("t_1_3_",f.id,"_mark_sel")]]
-                            }
-                            
-                            benchmark.source.method(paste0(tmp.tool.wd,"/MethodsFolder/"),curr.algo)
-                            method.output <- benchmark.method(curr.algo, fcs, run.parameters.values, markers_col)
-                            
-                            tmp.labels <- method.output[[1]]
-                            fcs <- enrich.FCS(fcs,tmp.labels)
-                            
-                            added.keyword <- paste0("CLMETH__",curr.algo,"__",ncol(fcs@exprs),"__")
-                            markers.txt <- "NULL"
-                            if(length(markers_col) > 0)
-                            {
-                                markers.txt <- ""
-                                lapply(1:length(markers_col), function(i)
-                                {
-                                    markers.txt <<- paste0(markers.txt,markers_col[[i]],".-.")
-                                })
-                            }
-                            params.txt <- "NULL"
-                            if(length(run.parameters.values) > 0)
-                            {
-                                params.txt <- ""
-                                lapply(1:length(run.parameters.values), function(i)
-                                {
-                                    p.name <- names(params)[i]
-                                    p.val <- run.parameters.values[[i]]
-                                    params.txt <<- paste0(params.txt,p.name,"-",p.val,".-.")
-                                })
-                            }
-                            added.keyword <- paste0(added.keyword,markers.txt,"__",params.txt)
-                            added.keyword.name <- paste0("CLMETH__",curr.algo,"__",ncol(fcs@exprs))
-                            
-                            return(list(fcs@exprs[,ncol(fcs@exprs)], colnames(fcs@exprs)[ncol(fcs@exprs)], 
-                                        added.keyword, added.keyword.name,
-                                        fcs.name))
+                            current.project$fcs.files[[i]]@exprs <<- current.project$fcs.files[[i]]@exprs[dwnsmpl,]
                         }
                         else
                         {
-                            return(NULL)
+                            current.project$fcs.files[[i]]@exprs <<- current.project$fcs.files.backup[[i]]@exprs[dwnsmpl,]
                         }
                     }
-                    
-                    progress.bar$inc(0,detail="finalizing clustering")
-                    stopCluster(cl)
-                    print(paste("EXECUTION TIME:"))
-                    print(Sys.time()-in.time)
-                    
-                    fcs.files <- current.project$fcs.files
-                    
-                    lapply(1:length(temp.out), function(file.id)
+                }
+            }
+            else
+            {
+                for(i in 1:length(current.project$fcs.files))
+                {
+                    if(is.defined(current.project$fcs.files[[i]]))
                     {
-                        if(is.defined(temp.out[[file.id]]))
+                        dwnsmpl <- as.integer(min(as.numeric(input[[paste0("t_1_3_",i,"_dwnsmpl")]]), nrow(current.project$fcs.files.backup[[i]]@exprs)))
+                        dwnsmpl <- sample(1:nrow(current.project$fcs.files.backup[[i]]@exprs), dwnsmpl, replace = F)
+                        if(nrow(current.project$fcs.files.backup[[i]]@exprs) == nrow(current.project$fcs.files[[i]]@exprs))
                         {
-                            tmp.file.labels <- matrix(temp.out[[file.id]][[1]],ncol=1)
-                            
-                            tmp.name <- ""
-                            tmp.val <- strsplit(temp.out[[file.id]][[2]], ".", T)[[1]]
-                            if(length(tmp.val)>1)
+                            current.project$fcs.files[[i]]@exprs <<- current.project$fcs.files[[i]]@exprs[dwnsmpl,]
+                        }
+                        else
+                        {
+                            current.project$fcs.files[[i]]@exprs <<- current.project$fcs.files.backup[[i]]@exprs[dwnsmpl,]
+                        }
+                    }
+                }
+            }
+            
+            if(is.defined(input$t_2_1_sel) && length(input$t_2_1_sel)>0)
+            {
+                #CHECK IF HCLUST IS USABLE===================================================================================
+                launch.analyses <- T
+                if("hclust" %in% unlist(input$t_2_1_sel))
+                {
+                    for(i in 1:length(current.project$fcs.files))
+                    {
+                        if(is.defined(current.project$fcs.files[[i]]))
+                        {
+                            if(nrow(current.project$fcs.files[[i]]@exprs) > 40000)
                             {
-                                lapply(1:(length(tmp.val) - 1), function(s.id)
-                                {
-                                    tmp.name <<- paste0(tmp.name, tmp.val[[s.id]], ".")
-                                })
+                                launch.analyses <- F
                             }
-                            tmp.name <- paste0(tmp.name, ncol(fcs.files[[ temp.out[[file.id]][[5]] ]])+1)
-                            colnames(tmp.file.labels) <- tmp.name
-                            
-                            fcs.files[[ temp.out[[file.id]][[5]] ]] <<- enrich.FCS(fcs.files[[ temp.out[[file.id]][[5]] ]], tmp.file.labels)
-                            
-                            new.key <- modify.keyword.value(temp.out[[file.id]][[3]], "__", 3,
-                                                            ncol(fcs.files[[ temp.out[[file.id]][[5]] ]]@exprs))
-                            new.key.name <- modify.keyword.value(temp.out[[file.id]][[4]], "__", 3, 
-                                                                 ncol(fcs.files[[ temp.out[[file.id]][[5]] ]]@exprs))
-                            
-                            fcs.files[[ temp.out[[file.id]][[5]] ]] <<- add.keyword.to.fcs(fcs.files[[ temp.out[[file.id]][[5]] ]], 
-                                                                                                 new.key, 
-                                                                                                 new.key.name)
-                            current.project$fcs.files.ui.colnames[[ temp.out[[file.id]][[5]] ]] <<- 
-                                c(current.project$fcs.files.ui.colnames[[ temp.out[[file.id]][[5]] ]],
-                                  tmp.name)
-                        }
-                    })
-                    
-                    current.project$fcs.files <<- fcs.files
-                    for(f in 1:length(current.project$fcs.files))
-                    {
-                        if(is.defined(current.project$fcs.files[[f]]))
-                        {
-                            update.markers.list(current.section="t_1_3",f)
-                            update.markers.list(current.section="t_3_4",f)
                         }
                     }
-                    
-                    progress.bar$close()
-                })
+                }
+                
+                if(launch.analyses)
+                {
+                    removeUI("#t_2_1_error_h4")
+                    lapply(1:length(input$t_2_1_sel), function(alg.id)
+                    {
+                        curr.algo <- input$t_2_1_sel[[alg.id]]
+                        if(length(clustering.algorithms$parameters[[curr.algo]]) > 0)
+                        {
+                            params <- list()
+                            params <- lapply(1:length(clustering.algorithms$parameters[[curr.algo]]), function(p)
+                            {
+                                x <- list(1,2,3)
+                                values <- c()
+                                if(is.defined(input[[paste0("t_2_3_",alg.id,"_",p)]]))
+                                {
+                                    tmp <- input[[paste0("t_2_3_",alg.id,"_",p)]]
+                                    x[[1]] <- as.numeric(tmp)[[1]]
+                                    x[[2]] <- as.numeric(tmp)[[2]]
+                                    x[[3]] <- as.numeric(clustering.algorithms$parameters[[curr.algo]][[p]][[2]])
+                                }
+                                if(is.defined(x[[3]]))
+                                {
+                                    values <- seq(as.numeric(x[[1]]),as.numeric(x[[2]]),as.numeric(x[[3]]))
+                                }
+                                return(values)
+                            })
+                            names(params) <- names(clustering.algorithms$parameters[[curr.algo]])
+                        }
+                        runs.params.list <- run.algo.param.combi(params)
+                        
+                        #DEFINES PARALLEL WORK=========================================================================
+                        nmb.runs <- length(runs.params.list)
+                        runs.per.core <- nmb.runs/current.project$nmb.cores
+    
+                        #Store reactive and global values
+                        tmp.curr.proj <- isolate(reactiveValuesToList(current.project))
+                        tmp.input <- isolate(reactiveValuesToList(input))
+                        tmp.tool.wd <- isolate(reactiveValuesToList(env.var))$tool.wd
+                        tmp.algo.params <- isolate(reactiveValuesToList(clustering.algorithms))$parameters
+                        
+                        tmp.L1 <- lapply(1:length(runs.params.list), function(tmp.id)
+                        {
+                            return(list(runs.params.list[[tmp.id]], tmp.id))
+                        })
+                        
+                        tmp.L2 <- lapply(1:length(tmp.curr.proj$fcs.files), function(tmp.id)
+                        {
+                            return(list(tmp.curr.proj$fcs.files[[tmp.id]], names(tmp.curr.proj$fcs.files)[tmp.id], tmp.id))
+                        })
+                        
+                        tmp.foreach.list <- run.algo.combi(list(tmp.L1, tmp.L2))
+                        L1.1 <- lapply(1:length(tmp.foreach.list), function(i)
+                        {
+                            return(tmp.foreach.list[[i]][[1]])
+                        })
+                        L1.2 <- lapply(1:length(tmp.foreach.list), function(i)
+                        {
+                            return(tmp.foreach.list[[i]][[2]])
+                        })
+                        L2.1 <- lapply(1:length(tmp.foreach.list), function(i)
+                        {
+                            return(tmp.foreach.list[[i]][[3]])
+                        })
+                        L2.2 <- lapply(1:length(tmp.foreach.list), function(i)
+                        {
+                            return(tmp.foreach.list[[i]][[4]])
+                        })
+                        L2.3 <- lapply(1:length(tmp.foreach.list), function(i)
+                        {
+                            return(tmp.foreach.list[[i]][[5]])
+                        })
+                        
+                        files.sizes <- unlist(sapply(tmp.curr.proj$fcs.files, function(curr.f){return(object.size(curr.f))}))
+                        nmb.cl <- get.nmb.cores.max(files.sizes, available.cores = current.project$nmb.cores, x.cores = 0.1,
+                                                    x.ram = 0.3, correction.coef = 1.05, separate.by.files = F)
+                        cl <- makeCluster(nmb.cl)
+                        registerDoSNOW(cl)
+    
+                        progress.bar <- Progress$new()
+                        progress.bar$set(paste0("ALGORITHM: ", curr.algo), value=0)
+                        progress.bar$inc(0,detail="fetching parameters")
+                        progress.bar.fct <- function(i)
+                        {
+                            par.val <- unlist(L1.1[[as.integer(i)]])
+                            par.name <- names(tmp.algo.params[[curr.algo]])
+                            progress.bar$inc(1/length(L1.1),
+                                             detail=paste0(par.name,": ",par.val))
+                        }
+                        in.time <- Sys.time()
+                        
+                        temp.out <- foreach(run.id=L1.2, run.parameters.values=L1.1, fcs=L2.1, fcs.name=L2.2, f.id=L2.3,
+                                            .options.snow = list(progress=progress.bar.fct),
+                                            .packages=c("flowCore","microbenchmark"),
+                                            .export = c("is.defined","benchmark.method","benchmark.source.method","add.keyword.to.fcs","alg.id",
+                                                        "curr.algo","enrich.FCS", "params","tmp.input","tmp.tool.wd","tmp.algo.params")) %dopar%
+                        {
+                            added.keyword <- NULL
+                            added.keyword.name <- NULL
+                            if(is.defined(fcs))
+                            {
+                                markers_col <- 1
+                                if( is.defined(tmp.input[[paste0("t_1_3_",f.id,"_mark_sel")]]) )
+                                {
+                                    markers_col <- tmp.input[[paste0("t_1_3_",f.id,"_mark_sel")]]
+                                }
+                                
+                                benchmark.source.method(paste0(tmp.tool.wd,"/MethodsFolder/"),curr.algo)
+                                method.output <- benchmark.method(curr.algo, fcs, run.parameters.values, markers_col)
+                                
+                                tmp.labels <- method.output[[1]]
+                                fcs <- enrich.FCS(fcs,tmp.labels)
+                                
+                                added.keyword <- paste0("CLMETH__",curr.algo,"__",ncol(fcs@exprs),"__")
+                                markers.txt <- "NULL"
+                                if(length(markers_col) > 0)
+                                {
+                                    markers.txt <- ""
+                                    lapply(1:length(markers_col), function(i)
+                                    {
+                                        markers.txt <<- paste0(markers.txt,markers_col[[i]],".-.")
+                                    })
+                                }
+                                params.txt <- "NULL"
+                                if(length(run.parameters.values) > 0)
+                                {
+                                    params.txt <- ""
+                                    lapply(1:length(run.parameters.values), function(i)
+                                    {
+                                        p.name <- names(params)[i]
+                                        p.val <- run.parameters.values[[i]]
+                                        params.txt <<- paste0(params.txt,p.name,"-",p.val,".-.")
+                                    })
+                                }
+                                added.keyword <- paste0(added.keyword,markers.txt,"__",params.txt)
+                                added.keyword.name <- paste0("CLMETH__",curr.algo,"__",ncol(fcs@exprs))
+                                
+                                return(list(fcs@exprs[,ncol(fcs@exprs)], colnames(fcs@exprs)[ncol(fcs@exprs)], 
+                                            added.keyword, added.keyword.name,
+                                            fcs.name))
+                            }
+                            else
+                            {
+                                return(NULL)
+                            }
+                        }
+                        
+                        progress.bar$inc(0,detail="finalizing clustering")
+                        stopCluster(cl)
+                        print(paste("EXECUTION TIME:"))
+                        print(Sys.time()-in.time)
+                        
+                        fcs.files <- current.project$fcs.files
+                        
+                        lapply(1:length(temp.out), function(file.id)
+                        {
+                            if(is.defined(temp.out[[file.id]]))
+                            {
+                                tmp.file.labels <- matrix(temp.out[[file.id]][[1]],ncol=1)
+                                
+                                tmp.name <- ""
+                                tmp.val <- strsplit(temp.out[[file.id]][[2]], ".", T)[[1]]
+                                if(length(tmp.val)>1)
+                                {
+                                    lapply(1:(length(tmp.val) - 1), function(s.id)
+                                    {
+                                        tmp.name <<- paste0(tmp.name, tmp.val[[s.id]], ".")
+                                    })
+                                }
+                                tmp.name <- paste0(tmp.name, ncol(fcs.files[[ temp.out[[file.id]][[5]] ]])+1)
+                                colnames(tmp.file.labels) <- tmp.name
+                                
+                                fcs.files[[ temp.out[[file.id]][[5]] ]] <<- enrich.FCS(fcs.files[[ temp.out[[file.id]][[5]] ]], tmp.file.labels)
+                                
+                                new.key <- modify.keyword.value(temp.out[[file.id]][[3]], "__", 3,
+                                                                ncol(fcs.files[[ temp.out[[file.id]][[5]] ]]@exprs))
+                                new.key.name <- modify.keyword.value(temp.out[[file.id]][[4]], "__", 3, 
+                                                                     ncol(fcs.files[[ temp.out[[file.id]][[5]] ]]@exprs))
+                                
+                                fcs.files[[ temp.out[[file.id]][[5]] ]] <<- add.keyword.to.fcs(fcs.files[[ temp.out[[file.id]][[5]] ]], 
+                                                                                                     new.key, 
+                                                                                                     new.key.name)
+                                current.project$fcs.files.ui.colnames[[ temp.out[[file.id]][[5]] ]] <<- 
+                                    c(current.project$fcs.files.ui.colnames[[ temp.out[[file.id]][[5]] ]],
+                                      tmp.name)
+                            }
+                        })
+                        
+                        current.project$fcs.files <<- fcs.files
+                        for(f in 1:length(current.project$fcs.files))
+                        {
+                            if(is.defined(current.project$fcs.files[[f]]))
+                            {
+                                update.markers.list(current.section="t_1_3",f)
+                                update.markers.list(current.section="t_3_4",f)
+                            }
+                        }
+                        
+                        progress.bar$close()
+                    })
+                }
+                else
+                {
+                    removeUI("#t_2_1_error_h4")
+                    insertUI("#t_2_1_error",
+                             "beforeEnd",
+                             div
+                             (
+                                h4("HCLUST: downsample your files (< 40k events)",style="color:red"),
+                                id="t_2_1_error_h4"
+                             )
+                    )
+                }
             }
         }
     })

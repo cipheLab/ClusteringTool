@@ -4,8 +4,10 @@ fct.parameters <- list("k"=c(0,50,1000,50),"samples"=c(0,5,100,5),"sampsize"=c(0
 
 BRP_BM.clara.execute <- function(fcs.file, params = list(50,5,80,0), markers_col)
 {
+    k <- min(nrow(fcs.file@exprs), as.numeric(params[[1]]))
+    
     fcs.out.clara <- clara(fcs.file@exprs[,as.numeric(markers_col)], 
-                           k = as.numeric(params[[1]]),
+                           k = k,
                            samples = as.numeric(params[[2]]),
                            sampsize = max(1+as.numeric(params[[1]]), as.numeric(params[[3]])), 
                            trace = as.numeric(params[[4]]))
