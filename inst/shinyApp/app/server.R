@@ -142,14 +142,14 @@ server <- function(input, output, session)
                                      selectInput(paste0("t_3_4_",f,"_mark_sel"),label = "Markers to use",
                                                          choices=markers.sel,
                                                          selected=markers.sel,
-                                                         multiple = T)
+                                                         multiple = T),
+                                     actionButton(paste0("t_3_4_",f,"_mark_all"), "Select all"),
+                                     actionButton(paste0("t_3_4_",f,"_unmark_all"), "Deselect all")
                                  ),
                                  box
                                  (
                                      width=1,height="12vh", style="padding-top:2vh",
-                                     checkboxInput(paste0("t_3_4_",f,"_cbox"), "Select", value = F),
-                                     actionButton(paste0("t_3_4_",f,"_mark_all"), "Select all"),
-                                     actionButton(paste0("t_3_4_",f,"_unmark_all"), "Deselect all")
+                                     checkboxInput(paste0("t_3_4_",f,"_cbox"), "Select", value = F)
                                  )
                              )
                     )
@@ -327,7 +327,7 @@ server <- function(input, output, session)
                 }
                 current.project$fcs.files[[paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files))]] <<- x
                 current.project$modified.fcs.files[[paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files))]] <<- T
-                progress.bar$inc(1/length(temp.files),detail=paste0("adding ",f))
+                progress.bar$inc(1/length(temp.files),detail=paste0("adding ",paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files))))
                 
                 file.vec <- matrix(ncol=3,nrow=1)
                 file.vec[1,1] <- paste0(basename(substr(f,1,nchar(f)-4)),"_",length(current.project$fcs.files)-1)

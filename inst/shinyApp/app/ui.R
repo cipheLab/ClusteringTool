@@ -54,7 +54,7 @@ ui <- dashboardPage(
                         id="t_1_4", width=6,
                         box
                         (
-                            height = "25vh",style="overflow:auto",
+                            style="height:25vh;overflow:auto",
                             tableOutput("t_1_4_fileInfo")
                         )
                     )),
@@ -108,7 +108,7 @@ ui <- dashboardPage(
                         id="t_3_1",width=2,height = "27vh",
                         selectInput("t_3_1_select_transform", "Select Transformation", choices=list("logicle"=1, "arcsinh"=2), selected = 1),
                         box(id="t_3_1_sel_box",width=12,style="overflow:auto;height:9vh"),
-                        actionButton("t_3_1_itransform", "Detransformation Selection",style="width:90%;margin-left:4.8%")
+                        actionButton("t_3_1_itransform", "Detransform Selection",style="width:90%;margin-left:4.8%")
                     ),
                     box
                     (
@@ -123,7 +123,7 @@ ui <- dashboardPage(
                        id="t_3_4", width=6,
                        box
                        (
-                           height = "25vh",style="overflow:auto",
+                           style="height:25vh;overflow:auto",
                            tableOutput("t_3_4_fileInfo")
                        )
                     )),
