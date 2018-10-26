@@ -1,4 +1,4 @@
-library(FlowSOM)
+library(flowCore)
 
 fct.parameters <- list("k"=c(1,10,100,10))
 
