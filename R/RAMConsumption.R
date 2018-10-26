@@ -27,34 +27,38 @@ get.nmb.cores.max <- function(files.sizes, #Liste ou vecteur contenant les taill
     if(separate.by.files)
     {
         max.size <- max(as.numeric(unlist(files.sizes)))
+        # print(paste("file size:",trunc(max.size/1024/1024), "Mb"))
+        # print(paste("ram:",trunc(available.ram*x.ram/1024/1024), "Mb"))
+        # print(paste("cores:",available.cores))
+        # print(paste("pratical cores:",available.cores*x.cores))
         for (k in 1:as.integer(available.cores*x.cores)) 
         {
-            mean.size <- length(unlist(files.sizes)) * (max.size) +
-                         (3.309e+07 + 1.584*max.size) * k
-            
-                                                                    
+            mean.size <- ( max.size + (3.309e+07 + 1.584*max.size) ) * k
+            # print(paste("    run size:",trunc(mean.size/1024/1024), "Mb"))
+            # print(paste("    size diff:",trunc(available.ram*x.ram/1024/1024) - trunc(mean.size/1024/1024), "Mb"))
+            # print("====================================================================================")
             if( (mean.size * correction.coef) <= available.ram*x.ram )
             {
                 Nk <- Nk + 1
             }
         }
     }
-    else
-    {
-        for(i in 1:length(files.sizes))
-        {
-            max.size <- max.size + files.sizes[[i]]
-            max.size <- max.size + 3.309e+07 + 1.584*files.sizes[[i]]  #Clara ram peak: p = 3.3e7 + 1.6 * file_size
-        }
-        
-        for (k in 1:as.integer(available.cores*x.cores)) 
-        {
-            if(k*max.size*correction.coef <= available.ram*x.ram)
-            {
-                Nk <- Nk + 1
-            }
-        }
-    }
+    # else
+    # {
+    #     for(i in 1:length(files.sizes))
+    #     {
+    #         max.size <- max.size + files.sizes[[i]]
+    #         max.size <- max.size + 3.309e+07 + 1.584*files.sizes[[i]]  #Clara ram peak: p = 3.3e7 + 1.6 * file_size
+    #     }
+    #     
+    #     for (k in 1:as.integer(available.cores*x.cores)) 
+    #     {
+    #         if(k*max.size*correction.coef/1024 <= available.ram*x.ram)
+    #         {
+    #             Nk <- Nk + 1
+    #         }
+    #     }
+    # }
     
     if(Nk==0)
     {

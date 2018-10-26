@@ -670,7 +670,6 @@ server <- function(input, output, session)
     
     observe(#UPDATE FILES SIZE (INFORMATION)
     {
-        print("ok")
         if(length(current.project$fcs.files)>0)
         {
             if(input$t_2_1_dwnsmpl)
@@ -910,6 +909,7 @@ server <- function(input, output, session)
                 }
             }
             
+            #RUN ANALYSES============================================================================================
             if(is.defined(input$t_2_1_sel) && length(input$t_2_1_sel)>0)
             {
                 #CHECK IF HCLUST IS USABLE===================================================================================
@@ -946,7 +946,7 @@ server <- function(input, output, session)
                                     tmp <- input[[paste0("t_2_3_",alg.id,"_",p)]]
                                     x[[1]] <- as.numeric(tmp)[[1]]
                                     x[[2]] <- as.numeric(tmp)[[2]]
-                                    x[[3]] <- as.numeric(clustering.algorithms$parameters[[curr.algo]][[p]][[2]])
+                                    x[[3]] <- as.numeric(input[[paste0("t_2_3_",alg.id,"_",p,"_step")]])
                                 }
                                 if(is.defined(x[[3]]))
                                 {
@@ -1000,9 +1000,10 @@ server <- function(input, output, session)
                             return(tmp.foreach.list[[i]][[5]])
                         })
                         
-                        files.sizes <- unlist(sapply(tmp.curr.proj$fcs.files, function(curr.f){return(object.size(curr.f))}))
-                        nmb.cl <- get.nmb.cores.max(files.sizes, available.cores = current.project$nmb.cores, x.cores = 0.1,
-                                                    x.ram = 0.3, correction.coef = 1.05, separate.by.files = F)
+                        files.sizes <- unlist(sapply(L2.1, function(curr.f){return(object.size(curr.f))}))
+                        nmb.cl <- get.nmb.cores.max(files.sizes, available.cores = current.project$nmb.cores, x.cores = 0.5,
+                                                    x.ram = 0.4, correction.coef = 1.05)
+                        
                         cl <- makeCluster(nmb.cl)
                         registerDoSNOW(cl)
     
