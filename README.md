@@ -1,6 +1,8 @@
 # Clustering Tool
 Shiny app developped to use different clustering algorithms on FCS files. The files are enriched and can then be downloaded and used with the Analysis Tool.
-	
+	 
+>[User manual :](doc/manual_clusteringtool.pdf)
+
 ## Requirements
   * software: R(Version 3.4.3 to 3.5), Rstudio(optional)
   * R packages: flowcore, microbenchmark, ncdfFlow, shiny, shinydashboard, shinyjs, doSNOW, cluster, parallel, ggcyto
