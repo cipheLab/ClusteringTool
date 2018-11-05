@@ -858,7 +858,7 @@ server <- function(input, output, session)
     
     observe(#UPDATE DOWNSAMPLING UI
     {
-        if(is.null(input$t_2_1_dwnsmpl_rate_step)) return(NULL)
+        if(is.null(input$t_2_1_dwnsmpl_rate)) return(NULL)
         if( is.defined(input$t_2_1_dwnsmpl_rate_step) && input$t_2_1_dwnsmpl_rate_step != "" && input$t_2_1_dwnsmpl_rate_step != " ")
         {
             updateSliderInput(session, "t_2_1_dwnsmpl_rate",
